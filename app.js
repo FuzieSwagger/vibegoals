@@ -174,11 +174,21 @@
   function loadConfig() {
     try {
       const raw = localStorage.getItem(LS_CFG);
-      const parsed = raw ? JSON.parse(raw) : {};
-      return { endpoint: typeof parsed.endpoint === 'string' ? parsed.endpoint : '' };
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // Сохранённая настройка (даже пустая) важнее автоопределения.
+        if (typeof parsed.endpoint === 'string') {
+          return { endpoint: parsed.endpoint.trim() };
+        }
+      }
     } catch {
-      return { endpoint: '' };
+      /* ignore */
     }
+    // Первый запуск на хостинге: сервер живёт по тому же адресу.
+    if (location.protocol === 'http:' || location.protocol === 'https:') {
+      return { endpoint: location.origin };
+    }
+    return { endpoint: '' };
   }
 
   function saveLocal() {

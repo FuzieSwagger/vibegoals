@@ -12,7 +12,7 @@
   <title>VibeGoals — трекер целей</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="style.css?v=2" />
-  <script src="app.js?v=3" defer></script>
+  <script src="app.js?v=4" defer></script>
 </head>
 <body>
   <div class="app">
@@ -210,8 +210,9 @@
           <input id="sEndpoint" type="url" placeholder="http://localhost:8787" />
         </label>
         <p class="hint">
-          Оставьте пустым для локального режима. Чтобы видеть общий прогресс с Глебом,
-          запустите <code>node server.js</code> и укажите его адрес у обоих.
+          На хостинге адрес подставляется сам, менять ничего не нужно. Пустое поле —
+          локальный режим без синхронизации. Для своего сервера укажите его адрес
+          (<code>node server.js</code>) у обоих участников.
         </p>
       </fieldset>
 
