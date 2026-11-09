@@ -184,10 +184,6 @@
     } catch {
       /* ignore */
     }
-    // Первый запуск на хостинге: сервер живёт по тому же адресу.
-    if (location.protocol === 'http:' || location.protocol === 'https:') {
-      return { endpoint: location.origin };
-    }
     return { endpoint: '' };
   }
 
@@ -716,6 +712,17 @@
      Синхронизация
      ------------------------------------------------------------------------ */
 
+  // Общее облако без регистрации (restful-api.dev): один JSON-объект на двоих.
+  // Работает с любого хостинга, CORS открыт, объект по ID не перечисляется.
+  const CLOUD = {
+    base: 'https://api.restful-api.dev/objects',
+    id: 'ff808181a09d98f701a1c220c71c73c4',
+  };
+
+  // syncMode: 'server' — свой server.js; 'cloud' — общий объект в облаке;
+  // 'off' — только этот браузер (файл или локальный режим).
+  let syncMode = 'off';
+
   function apiUrl(path = '/api/state') {
     return cfg.endpoint.replace(/\/+$/, '') + path;
   }
@@ -730,6 +737,52 @@
     } finally {
       clearTimeout(timer);
     }
+  }
+
+  function cloudUrl() {
+    return `${CLOUD.base}/${CLOUD.id}`;
+  }
+
+  async function cloudGet() {
+    const payload = await fetchJson(cloudUrl());
+    return payload && payload.data && Array.isArray(payload.data.entries) ? payload.data : null;
+  }
+
+  async function cloudPut(next) {
+    await fetchJson(cloudUrl(), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'vibegoals', data: next }),
+    });
+  }
+
+  /**
+   * Выбираем режим синхронизации:
+   * - указан адрес сервера — работаем с ним;
+   * - страницу раздаёт наш server.js (есть /api/health) — работаем с ним;
+   * - иначе, если открыты по http(s), — общий объект в облаке;
+   * - файл:// — только локально.
+   */
+  async function resolveMode() {
+    if (cfg.endpoint) {
+      syncMode = 'server';
+      return;
+    }
+    if (location.protocol !== 'http:' && location.protocol !== 'https:') {
+      syncMode = 'off';
+      return;
+    }
+    try {
+      const probe = await fetchJson(`${location.origin.replace(/\/+$/, '')}/api/health`, {}, 2000);
+      if (probe && probe.ok) {
+        cfg.endpoint = location.origin;
+        syncMode = 'server';
+        return;
+      }
+    } catch {
+      /* своего сервера рядом нет — синхронизируемся через облако */
+    }
+    syncMode = 'cloud';
   }
 
   function mergeStates(a, b) {
@@ -764,8 +817,29 @@
   }
 
   async function pushRemote() {
-    if (!cfg.endpoint) return;
+    if (syncMode === 'off') return;
     try {
+      if (syncMode === 'cloud') {
+        // Сначала читаем облако: не затереть записи, сделанные с другого устройства.
+        let remote = null;
+        try {
+          remote = await cloudGet();
+        } catch {
+          /* облако недоступно для чтения — попробуем просто записать */
+        }
+        if (remote) {
+          const merged = mergeStates(state, remote);
+          if (fingerprint(merged) !== fingerprint(state)) {
+            state = merged;
+            saveLocal();
+            render();
+          }
+        }
+        await cloudPut(state);
+        setSync('ok', `Синхронизировано · ${timeNow()}`);
+        return;
+      }
+
       const remote = await fetchJson(apiUrl(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -785,10 +859,35 @@
     }
   }
 
+  let lastPullAt = 0;
+
   async function pullRemote() {
-    if (!cfg.endpoint || syncing) return;
+    if (syncMode === 'off' || syncing) return;
+    if (Date.now() - lastPullAt < 15000) return;
     syncing = true;
+    lastPullAt = Date.now();
     try {
+      if (syncMode === 'cloud') {
+        const remote = await cloudGet();
+        if (remote) {
+          const merged = mergeStates(state, remote);
+          // В облаке нет части наших записей — сразу дописываем их туда.
+          if (fingerprint(merged) !== fingerprint(remote)) {
+            await cloudPut(merged);
+          }
+          if (fingerprint(merged) !== fingerprint(state)) {
+            state = merged;
+            saveLocal();
+            render();
+          }
+        } else {
+          // Облако пустое — восстанавливаем состояние из этого браузера.
+          await cloudPut(state);
+        }
+        setSync('ok', `Синхронизировано · ${timeNow()}`);
+        return;
+      }
+
       const remote = await fetchJson(apiUrl());
       if (remote && Array.isArray(remote.entries)) {
         const merged = mergeStates(state, remote);
@@ -814,7 +913,7 @@
   }
 
   function schedulePush() {
-    if (!cfg.endpoint) return;
+    if (syncMode === 'off') return;
     clearTimeout(pushTimer);
     pushTimer = setTimeout(pushRemote, 800);
   }
@@ -822,12 +921,14 @@
   function startPolling() {
     clearInterval(pollTimer);
     pollTimer = null;
-    if (!cfg.endpoint) {
+    if (syncMode === 'off') {
       setSync('', 'Локально · данные в браузере');
       return;
     }
     pullRemote();
-    pollTimer = setInterval(pullRemote, 30000);
+    // Облако — мягкий интервал: экономим чужой бесплатный API,
+    // свежее подтягиваем при возврате на вкладку.
+    pollTimer = setInterval(pullRemote, syncMode === 'cloud' ? 300000 : 30000);
   }
 
   /* ------------------------------------------------------------------------
@@ -869,7 +970,11 @@
 
   function resetAll() {
     if (!confirm('Сбросить все данные: записи, цели и имена?')) return;
+    // Надгробия для старых записей: иначе при слиянии они вернутся с другого устройства.
+    const tombstones = [...new Set([...state.entries.map((e) => e.id), ...state.deleted])];
     state = clone(DEFAULT_STATE);
+    state.deleted = tombstones;
+    state.updatedAt = Date.now();
     localStorage.removeItem(LS_STATE);
     localStorage.removeItem(LS_VIEW);
     view = 'team';
@@ -897,7 +1002,7 @@
     $('#settingsDialog').showModal();
   }
 
-  function applySettings() {
+  async function applySettings() {
     const name1 = $('#sName1').value.trim() || state.people[0].name;
     const name2 = $('#sName2').value.trim() || state.people[1].name;
     const target1 = Math.max(1, Number($('#sTarget1').value) || 1);
@@ -928,6 +1033,11 @@
     state.updatedAt = Date.now();
     saveLocal();
     render();
+    if (endpoint) {
+      syncMode = 'server';
+    } else {
+      await resolveMode();
+    }
     startPolling();
     schedulePush();
     toast('Настройки сохранены');
@@ -1038,18 +1148,26 @@
         }
       }
     });
+
+    // Вернулись на вкладку — подтягиваем свежие данные.
+    const wake = () => {
+      if (!document.hidden) pullRemote();
+    };
+    document.addEventListener('visibilitychange', wake);
+    window.addEventListener('focus', wake);
   }
 
   /* ------------------------------------------------------------------------
      Старт
      ------------------------------------------------------------------------ */
 
-  function init() {
+  async function init() {
     $('#fDate').value = dateStr(today());
     $('#fDate').max = dateStr(addDays(today(), 1));
     bindEvents();
     render();
     renderFormPeople();
+    await resolveMode();
     startPolling();
   }
 

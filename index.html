@@ -12,7 +12,7 @@
   <title>VibeGoals — трекер целей</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="style.css?v=2" />
-  <script src="app.js?v=4" defer></script>
+  <script src="app.js?v=5" defer></script>
 </head>
 <body>
   <div class="app">
@@ -210,9 +210,9 @@
           <input id="sEndpoint" type="url" placeholder="http://localhost:8787" />
         </label>
         <p class="hint">
-          На хостинге адрес подставляется сам, менять ничего не нужно. Пустое поле —
-          локальный режим без синхронизации. Для своего сервера укажите его адрес
-          (<code>node server.js</code>) у обоих участников.
+          Оставьте пустым — приложение само выберет режим: если рядом есть наш сервер
+          (<code>node server.js</code>), оно подключится к нему, иначе — к общему облачному
+          хранилищу. Адрес нужен, только если сервер работает отдельно.
         </p>
       </fieldset>
 
