@@ -1,0 +1,12 @@
+{
+  "name": "vibegoals",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Трекер совместного заработка на вайбкодинге",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

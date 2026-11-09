@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#16181d" />
+  <meta
+    name="description"
+    content="VibeGoals — трекер целей и заработка для двоих. Первые $500 к февралю и $1000 к лету."
+  />
+  <title>VibeGoals — трекер целей</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="style.css?v=2" />
+  <script src="app.js?v=3" defer></script>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="brand">
+        <div class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9" />
+            <circle cx="12" cy="12" r="4.5" />
+            <path d="M12 3v3M12 18v3M3 12h3M18 12h3" />
+          </svg>
+        </div>
+        <div class="brand__text">
+          <p class="eyebrow">vibe coding · с 1 ноября 2026</p>
+          <h1 class="title">VibeGoals</h1>
+        </div>
+      </div>
+      <div class="header__meta">
+        <div class="day-badge">
+          <span id="dayCount">День 1</span>
+          <small>в деле</small>
+        </div>
+        <button class="icon-btn" id="settingsBtn" type="button" title="Настройки" aria-label="Настройки">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.64a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="hero" id="hero" aria-label="Общий прогресс">
+        <p class="hero__label" id="heroLabel">Заработано вместе</p>
+        <div class="hero__sum">
+          <span id="heroTotal">$0</span>
+          <span class="hero__of" id="heroOf">из $1 000 к февралю</span>
+        </div>
+        <div class="hero__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="heroBar">
+          <div class="hero__fill" id="heroFill"></div>
+          <span class="hero__plan" id="heroPlan" title="План на сегодня"></span>
+        </div>
+        <p class="hero__note" id="heroNote">Первая запись — начало пути.</p>
+        <div class="hero__stats">
+          <div class="hero__stat"><b id="statEntries">0</b><span>записей</span></div>
+          <div class="hero__stat"><b id="statPerWeek">$0</b><span>темп в неделю</span></div>
+          <div class="hero__stat"><b id="statLeft">—</b><span>до первой цели</span></div>
+        </div>
+      </section>
+
+      <nav class="tabs" id="tabs" aria-label="Чей прогресс">
+        <button class="tab" type="button" data-view="denis">Денис</button>
+        <button class="tab" type="button" data-view="gleb">Глеб</button>
+        <button class="tab" type="button" data-view="team">Вместе</button>
+      </nav>
+
+      <section class="goals" id="goals" aria-label="Цели"></section>
+
+      <section class="card chart-card">
+        <div class="card__head">
+          <div>
+            <h2>Динамика</h2>
+            <p class="card__sub" id="chartSub">Накопленный заработок и план</p>
+          </div>
+          <div class="legend" id="legend"></div>
+        </div>
+        <div class="chart-wrap" id="chartWrap">
+          <svg id="chart" viewBox="0 0 760 320" role="img" aria-label="График накопленного заработка"></svg>
+          <div class="chart-tip" id="chartTip" hidden></div>
+        </div>
+      </section>
+
+      <section class="card add-card">
+        <div class="card__head">
+          <div>
+            <h2>Добавить заработок</h2>
+            <p class="card__sub">Любая сумма: заказ, бот, шаблон, консультация — всё считается.</p>
+          </div>
+        </div>
+        <form id="entryForm" class="entry-form" autocomplete="off">
+          <label class="field">
+            <span>Сумма, $</span>
+            <input id="fAmount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="25" required />
+          </label>
+          <label class="field">
+            <span>Дата</span>
+            <input id="fDate" type="date" required />
+          </label>
+          <label class="field">
+            <span>Кто</span>
+            <select id="fPerson" required></select>
+          </label>
+          <label class="field">
+            <span>Источник</span>
+            <input id="fSource" type="text" list="sourceList" placeholder="Заказ, бот, шаблон…" maxlength="60" />
+            <datalist id="sourceList">
+              <option value="Заказ"></option>
+              <option value="Чат-бот"></option>
+              <option value="Сайт"></option>
+              <option value="Шаблон"></option>
+              <option value="Консультация"></option>
+              <option value="Донат"></option>
+            </datalist>
+          </label>
+          <label class="field field--wide">
+            <span>Заметка</span>
+            <input id="fNote" type="text" placeholder="Например: лендинг для кофейни" maxlength="120" />
+          </label>
+          <button class="btn btn--primary" type="submit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Записать
+          </button>
+        </form>
+      </section>
+
+      <section class="card entries-card">
+        <div class="card__head">
+          <div>
+            <h2>История</h2>
+            <p class="card__sub" id="entriesSub">0 записей</p>
+          </div>
+        </div>
+        <ul class="entries" id="entries"></ul>
+      </section>
+
+      <section class="card badges-card">
+        <div class="card__head">
+          <div>
+            <h2>Достижения</h2>
+            <p class="card__sub">Маленькие победы по пути к большой цели</p>
+          </div>
+        </div>
+        <div class="badges" id="badges"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="sync">
+        <span class="sync__dot" id="syncDot"></span>
+        <span id="syncText">Локально · данные в браузере</span>
+      </div>
+      <div class="footer__actions">
+        <button class="btn btn--ghost" type="button" id="exportBtn">Экспорт</button>
+        <button class="btn btn--ghost" type="button" id="importBtn">Импорт</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden />
+        <button class="btn btn--ghost btn--danger" type="button" id="resetBtn">Сброс</button>
+      </div>
+    </footer>
+  </div>
+
+  <dialog class="dialog" id="settingsDialog">
+    <form method="dialog" class="dialog__body" id="settingsForm">
+      <div class="dialog__head">
+        <h2>Настройки</h2>
+        <button class="icon-btn icon-btn--small" value="cancel" type="submit" aria-label="Закрыть">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+
+      <fieldset class="dialog__group">
+        <legend>Участники</legend>
+        <div class="dialog__row">
+          <label class="field"><span>Первый</span><input id="sName1" type="text" maxlength="24" /></label>
+          <label class="field"><span>Второй</span><input id="sName2" type="text" maxlength="24" /></label>
+          <label class="field"><span>Старт</span><input id="sStart" type="date" /></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="dialog__group">
+        <legend>Цель 1</legend>
+        <div class="dialog__row">
+          <label class="field"><span>Название</span><input id="sLabel1" type="text" maxlength="32" /></label>
+          <label class="field"><span>Сумма, $</span><input id="sTarget1" type="number" min="1" step="1" /></label>
+          <label class="field"><span>Дедлайн</span><input id="sDeadline1" type="date" /></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="dialog__group">
+        <legend>Цель 2</legend>
+        <div class="dialog__row">
+          <label class="field"><span>Название</span><input id="sLabel2" type="text" maxlength="32" /></label>
+          <label class="field"><span>Сумма, $</span><input id="sTarget2" type="number" min="1" step="1" /></label>
+          <label class="field"><span>Дедлайн</span><input id="sDeadline2" type="date" /></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="dialog__group">
+        <legend>Синхронизация</legend>
+        <label class="field">
+          <span>Адрес сервера</span>
+          <input id="sEndpoint" type="url" placeholder="http://localhost:8787" />
+        </label>
+        <p class="hint">
+          Оставьте пустым для локального режима. Чтобы видеть общий прогресс с Глебом,
+          запустите <code>node server.js</code> и укажите его адрес у обоих.
+        </p>
+      </fieldset>
+
+      <div class="dialog__actions">
+        <button class="btn btn--ghost" value="cancel" type="submit">Отмена</button>
+        <button class="btn btn--primary" value="save" type="submit" id="settingsSave">Сохранить</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

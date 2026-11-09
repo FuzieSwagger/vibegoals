@@ -1,0 +1,27 @@
+# Blueprint для Render: https://render.com/docs/blueprint-spec
+#
+# 1. Создайте бесплатную базу в Upstash (Redis) и скопируйте
+#    UPSTASH_REDIS_REST_URL и UPSTASH_REDIS_REST_TOKEN.
+# 2. В Render: New → Blueprint → выберите этот репозиторий.
+# 3. Вставьте обе переменные, когда Render их запросит.
+#
+# Бесплатный инстанс Render засыпает и теряет локальные файлы,
+# поэтому состояние хранится в Upstash, а не в data/state.json.
+
+services:
+  - type: web
+    name: vibegoals
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: ""
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
