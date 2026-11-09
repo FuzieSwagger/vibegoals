@@ -14,7 +14,7 @@ services:
     runtime: node
     plan: free
     region: frankfurt
-    buildCommand: ""
+    buildCommand: npm install
     startCommand: node server.js
     healthCheckPath: /api/health
     autoDeploy: true
